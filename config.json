@@ -1,0 +1,58 @@
+{
+  "port": 8080,
+  "host": "0.0.0.0",
+
+  "refreshSeconds": {
+    "subway": 60,
+    "citibike": 60,
+    "weather": 600
+  },
+
+  "display": {
+    "style": "list",
+    "arrivalsPerRoute": 3,
+    "maxRowsNext": 6,
+    "showUnlitDots": true
+  },
+
+  "subway": [
+    {
+      "label": "Franklin",
+      "stopId": "239N",
+      "routes": ["2", "3", "4", "5"],
+      "target": {
+        "2": { "stopId": "127N", "label": "42St", "fallbackMin": 29 },
+        "3": { "stopId": "127N", "label": "42St", "fallbackMin": 29 },
+        "4": { "stopId": "631N", "label": "GCT",  "fallbackMin": 24 },
+        "5": { "stopId": "631N", "label": "GCT",  "fallbackMin": 24 }
+      }
+    },
+    {
+      "label": "7 Av",
+      "stopId": "D25N",
+      "routes": ["B", "Q"],
+      "target": {
+        "B": { "stopId": "D16N", "label": "42St", "fallbackMin": 24 },
+        "Q": { "stopId": "R16N", "label": "42St", "fallbackMin": 27 }
+      }
+    }
+  ],
+
+  "citibike": {
+    "bikes": [
+      { "station": "", "label": "Bike St 1" },
+      { "station": "", "label": "Bike St 2" }
+    ],
+    "docks": [
+      { "station": "", "label": "Dock St 1" },
+      { "station": "", "label": "Dock St 2" }
+    ]
+  },
+
+  "weather": {
+    "label": "11238",
+    "latitude": 40.6797,
+    "longitude": -73.9641,
+    "timezone": "America/New_York"
+  }
+}
