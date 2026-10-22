@@ -53,6 +53,6 @@ minutes (white, dimmed when too soon to catch) · travel time to 42 St (amber).
 
 The live value is the train's predicted arrival at the 42 St stop minus its arrival at your
 stop, both taken from the same realtime trip. If the trip doesn't list the 42 St stop, or the
-prediction is outside 60-180 % of `fallbackMin` (the MTA feed sometimes has every stop to
-42 St within two minutes), the board shows `fallbackMin` from `config.json` in dimmer amber.
+prediction is under 15 or over 40 min (the MTA feed sometimes has every stop to 42 St
+within two minutes), the board shows `fallbackMin` from `config.json` in dimmer amber.
 Labels (TSQ / GCT / 42nd) are left-aligned in one column, minutes right-aligned at the edge.
