@@ -77,6 +77,11 @@ Put the `short_name` (first column) into `config.json` → `citibike.bikes[]` / 
 4. In Chrome open `http://localhost:8080/?mask=camera` once, then menu → **Install app**.
    The "Subway" icon opens the board full screen, landscape only.
 
+5. Optional, for a dashboard-only phone: `bash scripts/debloat.sh` disables ~125 preinstalled
+   apps and services that sync, update, scan or upload (`bash scripts/debloat.sh enable` undoes
+   it). Battery: Settings → Battery → Battery protection → Maximum; the S21 here also has the cap
+   lowered to 60 % with `adb shell settings put global battery_protection_threshold 60`.
+
 Once Termux:Boot is set up, the server starts automatically after a reboot
 (`~/.termux/boot/subway-board.sh`); tap the Subway icon to bring the board back.
 
@@ -113,5 +118,5 @@ public/led.js        canvas LED matrix renderer
 public/app.js        layout + polling (ES5, for old WebViews)
 public/cat.js        Siamese pixel cat that walks along the masked strip
 public/icon-*.png    app icons (scripts/make-icons.js)
-scripts/             fetch-stops, find-station, make-icons, termux-setup, start, adb-setup
+scripts/             fetch-stops, find-station, make-icons, termux-setup, start, adb-setup, debloat
 ```
