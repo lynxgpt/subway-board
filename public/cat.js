@@ -1,6 +1,7 @@
 // Siamese pixel cat that walks along the masked strip (only shown when a ?mask strip is on).
 // Anti-gravity: its feet are on the outer screen edge and it paces along the short side, from the
-// strip's safe end to 80% of its length (never in the 20% next to the broken corner). ES5.
+// strip's safe end to 80% of its length (never in the 20% next to the broken corner). On the
+// camera side it meets the punch-hole camera; being a liquid, it flows around it. ES5.
 var Cat = (function () {
   var PAL = {
     c: "#F0DEB8", // cream coat
@@ -32,7 +33,10 @@ var Cat = (function () {
   ];
   var W = 18, H = 11, ROWS = 102, STEP_MS = 220, PAUSE = 12, REACH = 0.8;
   var STRIP = 0.08; // strip width as a fraction of the screen (matches index.html)
-  var led, canvas, side = null, end = "bottom";
+  // Galaxy S21 front camera, in device pixels (from its display cut-out spec: 60 x 80 px,
+  // centred on the camera edge), and how many dots the cat takes to ease around it
+  var HOLE = { centre: 0.5, halfPx: 30, depthPx: 80 }, TAPER = 4;
+  var led, canvas, side = null, end = "bottom", hole = false;
   var pos = null, dir = -1, pause = 0, tick = 0;
 
   function sprite(t, blink) {
@@ -68,21 +72,42 @@ var Cat = (function () {
     }
     var rows = sprite(pause ? 1 : tick, pause > 0 && pause < 4);
     led.clear();
-    // the sprite faces the walking direction; its feet go against the outer screen edge
+    var band = hole ? holeBand() : null;
+    // the sprite faces the walking direction; its feet go against the outer screen edge.
+    // f = height above the feet; each slice across the strip is shifted off the edge and
+    // squeezed where it passes the camera (liquid cat).
     for (var sy = 0; sy < H; sy++)
       for (var sx = 0; sx < W; sx++) {
         var c = PAL[rows[sy].charAt(sx)];
         if (!c) continue;
         var y = pos + (dir < 0 ? W - 1 - sx : sx);
-        var x = side === "left" ? H - 1 - sy : led.cols - H + sy;
-        led.set(x, y, c);
+        var f = H - 1 - sy, off = 0, sc = 1;
+        if (band) {
+          var d = y < band[0] ? band[0] - y : y > band[1] ? y - band[1] : 0;
+          off = Math.round(band[2] * Math.max(0, 1 - d / TAPER));
+          sc = Math.min(1, (led.cols - off) / H);
+        }
+        var xi = off + Math.floor(f * sc);
+        led.set(side === "left" ? xi : led.cols - 1 - xi, y, c);
       }
     led.render();
   }
 
-  // s: "left" | "right" | null (hidden); e: "top" | "bottom" = the strip's safe end
-  function place(s, e) {
+  // camera hole in this panel's dots: [first row, last row, depth in columns from the edge]
+  function holeBand() {
+    var p = led.pitch, mid = canvas.height * HOLE.centre;
+    return [
+      Math.floor((mid - HOLE.halfPx - led.oy) / p),
+      Math.ceil((mid + HOLE.halfPx - led.oy) / p) - 1,
+      Math.ceil((HOLE.depthPx - led.ox) / p) + 1,
+    ];
+  }
+
+  // s: "left" | "right" | null (hidden); e: "top" | "bottom" = the strip's safe end;
+  // h: the strip is on the camera edge, so walk around the camera hole
+  function place(s, e, h) {
     side = s;
+    hole = !!h;
     if (!s) {
       canvas.style.display = "none";
       return;

@@ -88,7 +88,7 @@ Once Termux:Boot is set up, the server starts automatically after a reboot
 | `?mask=camera` | 8 % black strip on the front-camera side (cut-out included), follows rotation (the S21 has a broken corner there) |
 | `?mask=left` / `?mask=right` | strip on a fixed side |
 | `?mask=none` | no strip (default) |
-| `?cat=top` / `?cat=bottom` / `?cat=off` | Siamese cat walking along the strip (feet on the screen edge) from this end to 80 % of the way, staying out of the 20 % by the S21's broken corner; default picks the end away from it |
+| `?cat=top` / `?cat=bottom` / `?cat=off` | Siamese cat walking along the strip (feet on the screen edge) from this end to 80 % of the way, staying out of the 20 % by the S21's broken corner; default picks the end away from it. With `?mask=camera` it is a liquid and flows around the punch-hole camera |
 | `?style=list` / `?style=next` | subway style (tapping the board also switches) |
 
 Every few minutes the whole panel shifts by up to half a dot (`display.pixelShiftMinutes`) to

@@ -114,7 +114,7 @@
     var on = side === "left" || side === "right";
     document.documentElement.className = cls + (on ? " mask-" + side : "");
     var end = catEnd();
-    Cat.place(on && end !== "off" ? side : null, end);
+    Cat.place(on && end !== "off" ? side : null, end, (param("mask") || lsGet("mask")) === "camera");
   }
 
   // anti burn-in: walk the panel through a 3x3 grid of small offsets
