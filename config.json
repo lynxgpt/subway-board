@@ -22,9 +22,10 @@
       "stopId": "239N",
       "routes": ["2", "3", "4", "5"],
       "rows": [["2", "3"], ["4", "5"]],
+      "show": { "minTrains": 6, "withinMin": 15, "dimUnderMin": 5 },
       "target": {
-        "2": { "stopId": "127N", "label": "42St", "fallbackMin": 29 },
-        "3": { "stopId": "127N", "label": "42St", "fallbackMin": 29 },
+        "2": { "stopId": "127N", "label": "TSQ", "fallbackMin": 29 },
+        "3": { "stopId": "127N", "label": "TSQ", "fallbackMin": 29 },
         "4": { "stopId": "631N", "label": "GCT",  "fallbackMin": 24 },
         "5": { "stopId": "631N", "label": "GCT",  "fallbackMin": 24 }
       }
@@ -33,9 +34,10 @@
       "label": "7 Av",
       "stopId": "D25N",
       "routes": ["B", "Q"],
+      "show": { "minTrains": 4, "withinMin": 25, "dimUnderMin": 10 },
       "target": {
         "B": { "stopId": "D16N", "label": "42St", "fallbackMin": 24 },
-        "Q": { "stopId": "R16N", "label": "42St", "fallbackMin": 27 }
+        "Q": { "stopId": "R16N", "label": "TSQ", "fallbackMin": 27 }
       }
     }
   ],

@@ -20,6 +20,7 @@
     cyan: "#29C5F6",
     yellow: "#FFE14D",
     red: "#FF3030",
+    half: "#79768A", // white at ~50 %
   };
 
   // 11x9 weather icons; y = sun, w = cloud, g = dark cloud, b = rain, s = snow, m = moon
@@ -79,23 +80,41 @@
     return param("style") || state.style || lsGet("style") || (state.data && state.data.display.style) || "list";
   }
 
-  // ?mask=right|left blacks out 10% of this device's screen on that side; ?mask=camera puts it on
+  // ?mask=right|left blacks out 6% of this device's screen on that side; ?mask=camera puts it on
   // the front-camera side (top edge in portrait), following the phone as it rotates.
   // Remembered per device; ?mask=none turns it off again.
+  // The S21's damaged corner is at the camera edge's end that is on top when the camera is on
+  // the left, so the cat goes to the other end; ?cat=top|bottom|off overrides.
+  function screenAngle() {
+    var a = screen.orientation ? screen.orientation.angle : window.orientation;
+    return a === -90 ? 270 : a;
+  }
   function maskSide() {
     var m = param("mask") || lsGet("mask");
     if (m !== "camera") return m;
-    var a = screen.orientation ? screen.orientation.angle : window.orientation;
+    var a = screenAngle();
     if (a === 90) return "left";
-    if (a === 270 || a === -90) return "right";
+    if (a === 270) return "right";
     return "none";
+  }
+  function catEnd() {
+    var c = param("cat") || lsGet("cat");
+    if (c === "top" || c === "bottom" || c === "off") return c;
+    var m = param("mask") || lsGet("mask");
+    if (m === "camera") return screenAngle() === 90 ? "bottom" : "top";
+    return "bottom";
   }
   function applyMask() {
     var m = param("mask");
     if (m) lsSet("mask", m);
+    var c = param("cat");
+    if (c) lsSet("cat", c);
     var cls = document.documentElement.className.replace(/\s*mask-\w+/g, "");
     var side = maskSide();
-    document.documentElement.className = cls + (side === "left" || side === "right" ? " mask-" + side : "");
+    var on = side === "left" || side === "right";
+    document.documentElement.className = cls + (on ? " mask-" + side : "");
+    var end = catEnd();
+    Cat.place(on && end !== "off" ? side : null, end);
   }
 
   // anti burn-in: walk the panel through a 3x3 grid of small offsets
@@ -109,8 +128,7 @@
   // ---------- header: clock + weather ----------
   function drawHeader() {
     var d = new Date(nowSec() * 1000);
-    var h = d.getHours() % 12 || 12;
-    var x = led.text(1, 1, h + ":" + pad(d.getMinutes()), C.white);
+    var x = led.text(1, 1, pad(d.getHours()) + ":" + pad(d.getMinutes()), C.white);
     x = led.text(x + 5, 1, DAYS[d.getDay()] + " " + MONTHS[d.getMonth()] + " " + d.getDate(), C.dim);
 
     var right = led.cols - 1;
@@ -200,10 +218,24 @@
         led.bullet(1 + k * 12, y, r, ROUTE_COLOR[r] || C.white, BLACK_TEXT[r] ? "#111111" : "#FFFFFF");
       }
       led.text(xLabel, y + 2, row.g.label, C.green);
+      // every train within show.withinMin minutes, but at least show.minTrains;
+      // trains closer than show.dimUnderMin (too soon to catch) are drawn at half brightness
+      var show = row.g.show || {};
+      var minTrains = show.minTrains || n, within = show.withinMin || 0, dimUnder = show.dimUnderMin || 0;
       var ms = [];
-      for (k = 0; k < row.list.length && ms.length < n; k++) ms.push(mins(row.list[k].a.t));
+      for (k = 0; k < row.list.length; k++) {
+        var mm = mins(row.list[k].a.t);
+        if (ms.length >= minTrains && mm > within) break;
+        ms.push(mm);
+      }
       var maxX = led.cols - travelW - 4;
-      led.text(xMins, y + 2, ms.length ? ms.join(",") : "--", ms.length ? C.white : C.dim, maxX);
+      if (!ms.length) led.text(xMins, y + 2, "--", C.dim);
+      var xm = xMins;
+      for (k = 0; k < ms.length; k++) {
+        var str = (k ? "," : "") + ms[k];
+        if (xm + FONT.measure(str) > maxX) break; // drop whole numbers, never half of one
+        xm = led.text(xm, y + 2, str, ms[k] < dimUnder ? C.half : C.white) + 1;
+      }
       var first = row.list[0];
       if (first) led.textRight(led.cols - 1, y + 2, travelText(row.g, first.r, first.a), C.amber);
     }
@@ -301,6 +333,7 @@
   }
 
   function init() {
+    Cat.init(document.getElementById("cat"));
     applyMask();
     var canvas = document.getElementById("board");
     led = new LedMatrix(canvas, ROWS, { showUnlitDots: true, glow: true, minCols: MIN_COLS });

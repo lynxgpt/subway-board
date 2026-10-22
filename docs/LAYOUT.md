@@ -1,17 +1,17 @@
 # Layout (phone, landscape)
 
 The page draws a simulated LED dot matrix. The panel is 102 dots tall, and its width follows
-the screen's aspect ratio (≈205 dots on the S21 with the 10 % camera-side strip). The font is 5×7 dots. Each dot is a
+the screen's aspect ratio (≈210 dots on the S21 with the 8 % camera-side strip). The font is 5×7 dots. Each dot is a
 lit or unlit LED circle with a slight glow.
 
 ```
       ┌───────────────────────────────────────────────────────────────────┐
-      │ 3:22 Thu Oct 22          ☀ 20°  20/7  ♦26%  ☂0%                   │  header (9)
+      │ 15:28 Thu Oct 22         ☀ 20°  20/7  ♦26%  ☂0%                   │  header (9), 24 h clock
       │                                                                   │
-      │ (2)(3) Franklin  2,5,5                                 42St 31m   │
-      │ (4)(5) Franklin  1,2,5                                  GCT 27m   │  subway: config rows,
-      │ (B)    7 Av      3,17,22                               42St 24m   │  spread over 72 dots
-      │ (Q)    7 Av      0,3,7                                 42St 23m   │
+      │ (2)(3) Franklin  5,11,12,17,19,25                       TSQ 31m   │
+      │ (4)(5) Franklin  0,2,10,10,14,16                        GCT 27m   │  subway: config rows,
+      │ (B)    7 Av      15,17,24,35                           42St 24m   │  spread over 72 dots
+      │ (Q)    7 Av      3,10,12,22                             TSQ 23m   │
 y=84  │ Bikes  Bike 1               3   Bike 2                   0        │  citi bike (9)
       │ Docks  Dock 1               7   Dock 2                  17        │  citi bike (9)
       └───────────────────────────────────────────────────────────────────┘
@@ -38,7 +38,7 @@ You can also choose the style with a URL parameter: `?style=list` or `?style=nex
 | Route bullets | Official MTA colours, with a white letter (black on N/Q/R/W) |
 | Station label (list) | green `#22D35A` |
 | Destination (next) | blue `#3A4DFF` |
-| Minutes | white `#F2ECFF` |
+| Minutes | white `#F2ECFF`; half brightness when under `show.dimUnderMin` |
 | Travel time to 42 St | amber `#FFB000` |
 | Weather icon | sun/moon/partly/cloud/rain/snow/fog/storm, 11×9 multicolour sprite |
 | Temperature (°C) | amber |

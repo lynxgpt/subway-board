@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#000000">
   <meta name="mobile-web-app-capable" content="yes">
   <link rel="manifest" href="manifest.webmanifest">
@@ -10,15 +10,20 @@
   <style>
     html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
     canvas { display: block; width: 100vw; height: 100vh; }
-    /* ?mask=right|left|camera: keep 10% of the screen width fully black (hides a damaged edge) */
-    html.mask-right canvas, html.mask-left canvas { width: 90vw; }
-    html.mask-left canvas { margin-left: 10vw; }
+    /* ?mask=right|left|camera: keep 8% of the screen width black (hides a damaged edge; the page
+       draws under the camera cut-out, so this includes it). The dancing cat (cat.js) sits in the
+       undamaged end of that strip. */
+    html.mask-right #board, html.mask-left #board { width: 92vw; }
+    html.mask-left #board { margin-left: 8vw; }
+    #cat { position: absolute; display: none; }
   </style>
 </head>
 <body>
   <canvas id="board"></canvas>
+  <canvas id="cat"></canvas>
   <script src="font.js"></script>
   <script src="led.js"></script>
+  <script src="cat.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
