@@ -36,6 +36,7 @@ var Cat = (function () {
   // Galaxy S21 front camera, in device pixels (from its display cut-out spec: 60 x 80 px,
   // centred on the camera edge), and how many dots the cat takes to ease around it
   var HOLE = { centre: 0.5, halfPx: 30, depthPx: 80 }, TAPER = 4;
+  var CORNER_PX = 90; // S21 rounded-corner radius: the cat stays this far from the strip's end
   var led, canvas, side = null, end = "bottom", hole = false;
   var pos = null, dir = -1, pause = 0, tick = 0;
 
@@ -52,12 +53,12 @@ var Cat = (function () {
 
   // range of the cat's top row, keeping clear of the 20% next to the broken corner
   function range() {
-    var reach = Math.round(ROWS * REACH);
-    return end === "bottom" ? [ROWS - reach, ROWS - W] : [0, reach - W];
+    var reach = Math.round(ROWS * REACH), inset = Math.ceil(CORNER_PX / led.pitch);
+    return end === "bottom" ? [ROWS - reach, ROWS - W - inset] : [inset, reach - W];
   }
 
   function frame() {
-    if (!led || !side) return;
+    if (!led || !side || /\bnight\b/.test(document.documentElement.className)) return;
     var r = range();
     if (pos === null || pos < r[0] || pos > r[1]) pos = end === "bottom" ? r[1] : r[0];
     if (pause > 0) pause--;

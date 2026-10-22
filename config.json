@@ -13,7 +13,8 @@
     "arrivalsPerRoute": 3,
     "maxRowsNext": 6,
     "showUnlitDots": true,
-    "pixelShiftMinutes": 3
+    "pixelShiftMinutes": 3,
+    "night": { "from": "01:00", "to": "08:00" }
   },
 
   "subway": [

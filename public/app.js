@@ -52,7 +52,7 @@
   var DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-  var state = { data: null, offset: 0, fetchedAt: 0, style: null };
+  var state = { data: null, offset: 0, fetchedAt: 0, style: null, wakeUntil: 0 };
   var led;
 
   function pad(n) {
@@ -302,7 +302,26 @@
     }
   }
 
+  // night (display.night, e.g. 01:00-08:00): the screen goes fully black; a tap shows the
+  // board for WAKE_MS
+  var WAKE_MS = 30000;
+  function minutesOf(hhmm) {
+    var p = String(hhmm).split(":");
+    return Number(p[0]) * 60 + Number(p[1] || 0);
+  }
+  function isNight() {
+    var n = state.data && state.data.display && state.data.display.night;
+    if (!n || Date.now() < state.wakeUntil) return false;
+    var d = new Date(nowSec() * 1000), m = d.getHours() * 60 + d.getMinutes();
+    var a = minutesOf(n.from), b = minutesOf(n.to);
+    return a <= b ? m >= a && m < b : m >= a || m < b;
+  }
+
   function draw() {
+    var night = isNight();
+    var cls = document.documentElement.className.replace(/\s*night/g, "");
+    document.documentElement.className = cls + (night ? " night" : "");
+    if (night) return;
     applyShift();
     led.clear();
     drawHeader();
@@ -325,6 +344,11 @@
       if (xhr.status !== 200) return;
       try {
         var d = JSON.parse(xhr.responseText);
+        // the server's code changed (an update was deployed): load the new page
+        if (state.data && d.version && state.data.version && d.version !== state.data.version) {
+          location.reload();
+          return;
+        }
         state.data = d;
         state.offset = d.now - Date.now() / 1000;
         state.fetchedAt = Date.now();
@@ -348,7 +372,13 @@
     if (screen.orientation && screen.orientation.addEventListener)
       screen.orientation.addEventListener("change", relayout);
     else window.addEventListener("orientationchange", relayout);
-    canvas.addEventListener("click", function () {
+    // on the document, not the canvas: at night the canvas is hidden and gets no clicks
+    document.addEventListener("click", function () {
+      if (isNight()) {
+        state.wakeUntil = Date.now() + WAKE_MS;
+        draw();
+        return;
+      }
       state.style = currentStyle() === "list" ? "next" : "list";
       lsSet("style", state.style);
       draw();

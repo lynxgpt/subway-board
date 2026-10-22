@@ -13,6 +13,15 @@ const { getWeather } = require("./lib/weather");
 const mock = require("./lib/mock");
 
 const MOCK = process.env.MOCK === "1";
+// changes whenever public/ or config.json changes; open boards reload when it does
+const VERSION = String(
+  Math.max(
+    fs.statSync(path.join(__dirname, "config.json")).mtimeMs,
+    ...fs.readdirSync(path.join(__dirname, "public")).map(
+      (f) => fs.statSync(path.join(__dirname, "public", f)).mtimeMs
+    )
+  )
+);
 const PORT = Number(process.env.PORT || config.port);
 const PUBLIC = path.join(__dirname, "public");
 
@@ -36,6 +45,7 @@ async function data() {
       ]);
   return {
     now: Math.floor(Date.now() / 1000),
+    version: VERSION,
     display: config.display,
     subway: subway.groups,
     citibike: { bikes: citibike.bikes, docks: citibike.docks },

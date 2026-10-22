@@ -13,8 +13,13 @@
     /* ?mask=right|left|camera: keep 8% of the screen width black (hides a damaged edge; the page
        draws under the camera cut-out, so this includes it). The dancing cat (cat.js) sits in the
        undamaged end of that strip. */
-    html.mask-right #board, html.mask-left #board { width: 92vw; }
+    html.mask-right #board, html.mask-left #board { width: 89.5vw; }
     html.mask-left #board { margin-left: 8vw; }
+    /* the opposite edge keeps a thin 2.5vw strip: the S21's rounded corners (90 px radius)
+       would clip the board's corner dots */
+    html.mask-right #board { margin-left: 2.5vw; }
+    /* night: fully black */
+    html.night canvas { visibility: hidden; }
     #cat { position: absolute; display: none; }
   </style>
 </head>

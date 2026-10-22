@@ -91,6 +91,13 @@ Once Termux:Boot is set up, the server starts automatically after a reboot
 | `?cat=top` / `?cat=bottom` / `?cat=off` | Siamese cat walking along the strip (feet on the screen edge) from this end to 80 % of the way, staying out of the 20 % by the S21's broken corner; default picks the end away from it. With `?mask=camera` it is a liquid and flows around the punch-hole camera |
 | `?style=list` / `?style=next` | subway style (tapping the board also switches) |
 
+With a strip on, the opposite edge keeps a thin 2.5 % black margin so the S21's rounded corners
+(90 px radius) don't clip the board's corner dots.
+
+**Night** (`display.night`, default 01:00-08:00): the screen is fully black; tap it to see the
+board for 30 s. After an update the open board reloads itself within 30 s (the server reports a
+code version in `/api/data`).
+
 Every few minutes the whole panel shifts by up to half a dot (`display.pixelShiftMinutes`) to
 spread OLED wear.
 
