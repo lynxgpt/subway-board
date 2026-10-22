@@ -6,7 +6,7 @@ lit or unlit LED circle with a slight glow.
 
 ```
       ┌───────────────────────────────────────────────────────────────────┐
-      │ 15:28 Thu Oct 22         ☀ 20°  20/7  ♦26%  ☂0%                   │  header (9), 24 h clock
+      │ 15:28 Thu Oct 22         ☀ 20°  20/7  ♦26%  ☂0%                   │  header (9), 24 h clock, colon blinks
       │                                                                   │
       │ (2)(3) Franklin  5,11,12,17,19,25                       TSQ 31m   │
       │ (4)(5) Franklin  0,2,10,10,14,16                        GCT 27m   │  subway: config rows,

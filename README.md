@@ -88,7 +88,7 @@ Once Termux:Boot is set up, the server starts automatically after a reboot
 | `?mask=camera` | 8 % black strip on the front-camera side (cut-out included), follows rotation (the S21 has a broken corner there) |
 | `?mask=left` / `?mask=right` | strip on a fixed side |
 | `?mask=none` | no strip (default) |
-| `?cat=top` / `?cat=bottom` / `?cat=off` | dancing Siamese cat in the strip; by default at the end away from the S21's broken corner |
+| `?cat=top` / `?cat=bottom` / `?cat=off` | Siamese cat walking along the strip (feet on the screen edge) from this end to 80 % of the way, staying out of the 20 % by the S21's broken corner; default picks the end away from it |
 | `?style=list` / `?style=next` | subway style (tapping the board also switches) |
 
 Every few minutes the whole panel shifts by up to half a dot (`display.pixelShiftMinutes`) to
@@ -106,7 +106,7 @@ lib/mock.js          MOCK=1 fake feeds (encoded through the real protobuf path)
 public/font.js       5x7 dot-matrix font
 public/led.js        canvas LED matrix renderer
 public/app.js        layout + polling (ES5, for old WebViews)
-public/cat.js        dancing Siamese pixel cat for the masked strip
+public/cat.js        Siamese pixel cat that walks along the masked strip
 public/icon-*.png    app icons (scripts/make-icons.js)
 scripts/             fetch-stops, find-station, make-icons, termux-setup, start, adb-setup
 ```

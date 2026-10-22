@@ -128,7 +128,9 @@
   // ---------- header: clock + weather ----------
   function drawHeader() {
     var d = new Date(nowSec() * 1000);
-    var x = led.text(1, 1, pad(d.getHours()) + ":" + pad(d.getMinutes()), C.white);
+    // colon blinks once a second (a space is the same width, so nothing moves)
+    var colon = d.getSeconds() % 2 ? " " : ":";
+    var x = led.text(1, 1, pad(d.getHours()) + colon + pad(d.getMinutes()), C.white);
     x = led.text(x + 5, 1, DAYS[d.getDay()] + " " + MONTHS[d.getMonth()] + " " + d.getDate(), C.dim);
 
     var right = led.cols - 1;
@@ -361,7 +363,11 @@
     draw();
     poll();
     setInterval(poll, 30000);
-    setInterval(draw, 1000);
+    // redraw on each second boundary so the colon blinks evenly
+    (function tick() {
+      draw();
+      setTimeout(tick, 1000 - (Date.now() % 1000) + 5);
+    })();
   }
 
   window.addEventListener("load", init);
