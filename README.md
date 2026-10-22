@@ -1,13 +1,15 @@
 # subway-board
 
 An LED-matrix-style NYC subway, Citi Bike and weather board for an old Android phone.
-A Node server runs in **Termux** on the phone, and a kiosk browser shows `http://localhost:8080`.
-Other devices on the same Wi-Fi can open `http://<phone-ip>:8080`.
+A Node server runs in **Termux** on the phone, and Chrome (installed as a home-screen app) shows
+`http://localhost:8080`. Any other device on the same Wi-Fi (iPad, laptop) can open
+`http://<phone-ip>:8080` in a browser.
 
 ![list style](docs/screenshots/style-list.png)
 ![next style](docs/screenshots/style-next.png)
 
-The screenshots use mock data. See [docs/LAYOUT.md](docs/LAYOUT.md) for the layout.
+Live data, taken on the phone (the black strip on the left is the `?mask=camera` setting).
+See [docs/LAYOUT.md](docs/LAYOUT.md) for the layout.
 
 ## Data sources (no API keys)
 
@@ -15,10 +17,20 @@ The screenshots use mock data. See [docs/LAYOUT.md](docs/LAYOUT.md) for the layo
 |---|---|---|
 | Subway | MTA GTFS-Realtime: `nyct/gtfs` (2/3/4/5), `gtfs-bdfm` (B), `gtfs-nqrw` (Q) | 60 s |
 | Citi Bike | GBFS `station_information` / `station_status` (`gbfs.lyft.com/.../bkn`, then `gbfs.citibikenyc.com`) | 60 s |
-| Weather | Open-Meteo, ZIP 11238 (40.6797, -73.9641) | 10 min |
+| Weather | Open-Meteo, ZIP 11238 (40.6797, -73.9641), °C: icon, temp, hi/lo, humidity, rain chance next 3 h | 10 min |
 | Stop names | MTA static GTFS `stops.txt` → `data/stops.json` (`npm run fetch-stops`) | once |
 
-Configured stations: Franklin Av `239N` (2 3 4 5) and 7 Av `D25N` (B Q), Manhattan-bound only.
+Configured stations: Franklin Av `239N` (2/3 and 4/5, each pair merged into one row) and
+7 Av `D25N` (B, Q), Manhattan-bound only.
+
+Citi Bike (`config.json` → `citibike`):
+
+| Label | Station | short_name |
+|---|---|---|
+| Bike 1 | Sterling Pl & Classon Ave | 4033.18 |
+| Bike 2 | Lincoln Pl & Classon Ave | 3960.01 |
+| Dock 1 | Park Pl & Carlton Ave | 4125.13 |
+| Dock 2 | Park Pl & Vanderbilt Ave | 4083.13 |
 
 ## Run on a PC (development)
 
@@ -31,7 +43,7 @@ npm start            # live data
 
 Open http://localhost:8080. Tap the screen to switch between the `list` and `next` styles.
 
-## Citi Bike stations (still to fill in)
+## Changing Citi Bike stations
 
 ```bash
 npm run find-station -- --zip               # 10 nearest to ZIP 11238
@@ -44,12 +56,12 @@ Put the `short_name` (first column) into `config.json` → `citibike.bikes[]` / 
 
 ## Phone setup
 
-1. Phone: turn on Developer options and USB debugging. Install **Termux** and **Termux:Boot**
-   from F-Droid or GitHub (not the Play Store), plus **Fully Kiosk Browser** (or use Chrome).
+1. Phone: turn on Developer options and USB debugging. Get **Termux** and **Termux:Boot** from
+   their GitHub releases (`termux/termux-app`, `termux/termux-boot`; not the Play Store).
    Open Termux:Boot once.
 2. PC: `bash scripts/adb-setup.sh [apk files...]`. This installs any APKs you pass, keeps the
-   screen on while charging, locks landscape, exempts the apps from battery optimisation, and
-   copies the project to `/sdcard/Download/subway-board`.
+   screen on while charging, turns auto-rotate on, exempts the apps from battery optimisation,
+   and copies the project to `/sdcard/Download/subway-board`.
 3. Termux on the phone:
    ```bash
    termux-setup-storage
@@ -57,11 +69,23 @@ Put the `short_name` (first column) into `config.json` → `citibike.bikes[]` / 
    bash ~/subway-board/scripts/termux-setup.sh
    bash ~/subway-board/scripts/start.sh
    ```
-4. Point Fully Kiosk's start URL at `http://localhost:8080`, or in Chrome open it and use
-   **Add to Home screen** (it runs full screen, landscape).
+4. In Chrome open `http://localhost:8080/?mask=camera` once, then menu → **Install app**.
+   The "Subway" icon opens the board full screen, landscape only.
 
 Once Termux:Boot is set up, the server starts automatically after a reboot
-(`~/.termux/boot/subway-board.sh`).
+(`~/.termux/boot/subway-board.sh`); tap the Subway icon to bring the board back.
+
+## Per-device URL settings (remembered by each browser)
+
+| Parameter | Effect |
+|---|---|
+| `?mask=camera` | 10 % black strip on the front-camera side, follows rotation (the S21 has a broken corner there) |
+| `?mask=left` / `?mask=right` | strip on a fixed side |
+| `?mask=none` | no strip (default) |
+| `?style=list` / `?style=next` | subway style (tapping the board also switches) |
+
+Every few minutes the whole panel shifts by up to half a dot (`display.pixelShiftMinutes`) to
+spread OLED wear.
 
 ## Files
 
@@ -70,10 +94,11 @@ server.js            HTTP server: public/ + GET /api/data
 config.json          stations, 42 St targets, Citi Bike stations, weather location, refresh
 lib/mta.js           GTFS-RT fetch/decode, arrivals per route, travel time to 42 St
 lib/citibike.js      GBFS fetch, station lookup (station_id / short_name / name)
-lib/weather.js       Open-Meteo current + today hi/lo + rain chance in the next 3 h
+lib/weather.js       Open-Meteo current (°C, humidity, icon) + today hi/lo + rain chance next 3 h
 lib/mock.js          MOCK=1 fake feeds (encoded through the real protobuf path)
 public/font.js       5x7 dot-matrix font
 public/led.js        canvas LED matrix renderer
 public/app.js        layout + polling (ES5, for old WebViews)
-scripts/             fetch-stops, find-station, termux-setup, start, adb-setup
+public/icon-*.png    app icons (scripts/make-icons.js)
+scripts/             fetch-stops, find-station, make-icons, termux-setup, start, adb-setup
 ```

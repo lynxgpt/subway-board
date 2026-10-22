@@ -7,18 +7,34 @@ function LedMatrix(canvas, rows, opts) {
   this.resize();
 }
 
+// Dots are square-pitched. The panel is `rows` dots tall unless that would leave fewer than
+// opts.minCols columns (e.g. a 4:3 iPad), in which case it shrinks and is centred.
+// A margin of one dot is kept free so the whole panel can be nudged (anti burn-in).
 LedMatrix.prototype.resize = function () {
   var dpr = window.devicePixelRatio || 1;
-  var W = Math.floor(window.innerWidth * dpr);
-  var H = Math.floor(window.innerHeight * dpr);
+  var rect = this.canvas.getBoundingClientRect();
+  var W = Math.floor(rect.width * dpr);
+  var H = Math.floor(rect.height * dpr);
   this.canvas.width = W;
   this.canvas.height = H;
-  this.pitch = H / this.rows;
-  this.cols = Math.floor(W / this.pitch);
-  this.ox = (W - this.cols * this.pitch) / 2;
-  this.oy = 0;
+  var minCols = this.opts.minCols || 0;
+  var p = H / (this.rows + 1);
+  if (minCols && W / (minCols + 1) < p) p = W / (minCols + 1);
+  this.pitch = p;
+  this.cols = Math.floor(W / p - 1);
+  this.shiftMax = Math.floor(p);
+  this.ox = (W - this.cols * p) / 2;
+  this.oy = (H - this.rows * p) / 2;
+  this.sx = 0;
+  this.sy = 0;
   this.buf = new Array(this.cols * this.rows);
   this.bg = this._renderBackground(W, H);
+};
+
+// Nudge the panel by (dx, dy) in units of shiftMax/2 (each -1..1).
+LedMatrix.prototype.shift = function (dx, dy) {
+  this.sx = Math.round((dx * this.shiftMax) / 2);
+  this.sy = Math.round((dy * this.shiftMax) / 2);
 };
 
 LedMatrix.prototype._renderBackground = function (W, H) {
@@ -38,11 +54,13 @@ LedMatrix.prototype._renderBackground = function (W, H) {
 // draw every dot (lit === null) or the dots whose colour matches
 LedMatrix.prototype._dots = function (g, color, rFactor) {
   var p = this.pitch, r = p * rFactor, cols = this.cols, buf = this.buf;
+  // the unlit background is drawn unshifted and moved with drawImage
+  var ox = this.ox + (color === null ? 0 : this.sx), oy = this.oy + (color === null ? 0 : this.sy);
   g.beginPath();
   for (var y = 0; y < this.rows; y++) {
     for (var x = 0; x < cols; x++) {
       if (color !== null && buf[y * cols + x] !== color) continue;
-      var cx = this.ox + (x + 0.5) * p, cy = this.oy + (y + 0.5) * p;
+      var cx = ox + (x + 0.5) * p, cy = oy + (y + 0.5) * p;
       g.moveTo(cx + r, cy);
       g.arc(cx, cy, r, 0, 6.2832);
     }
@@ -92,9 +110,21 @@ LedMatrix.prototype.bullet = function (x, y, label, color, textColor) {
   for (var k = 0; k < gl.px.length; k++) this.set(gx + gl.px[k][0], gy + gl.px[k][1], textColor);
 };
 
+// Multi-colour sprite: rows of chars, each char a key into palette ("." = off).
+LedMatrix.prototype.sprite = function (x, y, rows, palette) {
+  for (var dy = 0; dy < rows.length; dy++)
+    for (var dx = 0; dx < rows[dy].length; dx++) {
+      var c = palette[rows[dy].charAt(dx)];
+      if (c) this.set(x + dx, y + dy, c);
+    }
+  return x + rows[0].length;
+};
+
 LedMatrix.prototype.render = function () {
   var g = this.canvas.getContext("2d");
-  g.drawImage(this.bg, 0, 0);
+  g.fillStyle = "#000";
+  g.fillRect(0, 0, this.canvas.width, this.canvas.height);
+  g.drawImage(this.bg, this.sx, this.sy);
   var colors = {};
   for (var i = 0; i < this.buf.length; i++) if (this.buf[i]) colors[this.buf[i]] = 1;
   var list = Object.keys(colors);

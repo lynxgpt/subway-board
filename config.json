@@ -12,7 +12,8 @@
     "style": "list",
     "arrivalsPerRoute": 3,
     "maxRowsNext": 6,
-    "showUnlitDots": true
+    "showUnlitDots": true,
+    "pixelShiftMinutes": 3
   },
 
   "subway": [
@@ -20,6 +21,7 @@
       "label": "Franklin",
       "stopId": "239N",
       "routes": ["2", "3", "4", "5"],
+      "rows": [["2", "3"], ["4", "5"]],
       "target": {
         "2": { "stopId": "127N", "label": "42St", "fallbackMin": 29 },
         "3": { "stopId": "127N", "label": "42St", "fallbackMin": 29 },
@@ -40,12 +42,12 @@
 
   "citibike": {
     "bikes": [
-      { "station": "", "label": "Bike St 1" },
-      { "station": "", "label": "Bike St 2" }
+      { "station": "4033.18", "label": "Bike 1", "name": "Sterling Pl & Classon Ave" },
+      { "station": "3960.01", "label": "Bike 2", "name": "Lincoln Pl & Classon Ave" }
     ],
     "docks": [
-      { "station": "", "label": "Dock St 1" },
-      { "station": "", "label": "Dock St 2" }
+      { "station": "4125.13", "label": "Dock 1", "name": "Park Pl & Carlton Ave" },
+      { "station": "4083.13", "label": "Dock 2", "name": "Park Pl & Vanderbilt Ave" }
     ]
   },
 

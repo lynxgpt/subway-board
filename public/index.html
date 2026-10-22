@@ -10,6 +10,9 @@
   <style>
     html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
     canvas { display: block; width: 100vw; height: 100vh; }
+    /* ?mask=right|left|camera: keep 10% of the screen width fully black (hides a damaged edge) */
+    html.mask-right canvas, html.mask-left canvas { width: 90vw; }
+    html.mask-left canvas { margin-left: 10vw; }
   </style>
 </head>
 <body>

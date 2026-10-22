@@ -22,8 +22,31 @@
     red: "#FF3030",
   };
 
+  // 11x9 weather icons; y = sun, w = cloud, g = dark cloud, b = rain, s = snow, m = moon
+  var ICON_PAL = { y: "#FFD000", w: "#C8C8D4", g: "#7A7A88", b: "#29C5F6", s: "#F2ECFF", m: "#E8E2B0" };
+  var ICONS = {
+    sun: ["....y......", ".y..y..y...", "..y...y....", "....yyy....", "yy.yyyyy.yy", "....yyy....",
+          "..y...y....", ".y..y..y...", "....y......"],
+    moon: ["...mmm.....", "..mm.......", ".mm........", ".mm........", ".mm........", ".mm.....m..",
+           "..mm...mm..", "...mmmmm...", "..........."],
+    partly: ["..y........", "y.y.y......", ".yyy.......", "yyyyy.ww...", ".yyywwwwww.", "y.wwwwwwwww",
+             "..wwwwwwwww", "...wwwwwww.", "..........."],
+    cloud: ["...........", "....www....", "..wwwwwww..", ".wwwwwwwww.", "wwwwwwwwwww", "wwwwwwwwwww",
+            ".wwwwwwwww.", "...........", "..........."],
+    rain: ["....ggg....", "..ggggggg..", ".ggggggggg.", "ggggggggggg", ".ggggggggg.", "...........",
+           ".b..b..b...", "b..b..b....", "..........."],
+    snow: ["....www....", "..wwwwwww..", ".wwwwwwwww.", "wwwwwwwwwww", ".wwwwwwwww.", "...........",
+           ".s...s...s.", "...s...s...", ".s...s...s."],
+    storm: ["....ggg....", "..ggggggg..", ".ggggggggg.", "ggggggggggg", ".gggyyggg..", "....yy.....",
+            "...yyyy....", ".....y.....", "....y......"],
+    fog: ["...........", "wwwwwwwww..", "...........", "..wwwwwwwww", "...........", "wwwwwwwww..",
+          "...........", "..wwwwwwwww", "..........."],
+  };
+
   // matrix height in dots: header 9 + gap 2 + 6 subway rows x 12 + gap 1 + 2 bike rows x 9
   var ROWS = 102;
+  // narrowest panel the layout fits in; narrower screens (4:3 iPad) get a letterboxed panel
+  var MIN_COLS = 196;
   var SUB_Y = 11, SUB_ROWS = 6, SUB_H = 12, BIKE_Y = 84, INFO_H = 9;
   var DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -47,9 +70,40 @@
     try { window.localStorage.setItem(k, v); } catch (e) {}
   }
 
+  function param(name) {
+    var m = new RegExp("[?&]" + name + "=(\\w+)").exec(location.search);
+    return m && m[1];
+  }
+
   function currentStyle() {
-    var m = /[?&]style=(\w+)/.exec(location.search);
-    return (m && m[1]) || state.style || lsGet("style") || (state.data && state.data.display.style) || "list";
+    return param("style") || state.style || lsGet("style") || (state.data && state.data.display.style) || "list";
+  }
+
+  // ?mask=right|left blacks out 10% of this device's screen on that side; ?mask=camera puts it on
+  // the front-camera side (top edge in portrait), following the phone as it rotates.
+  // Remembered per device; ?mask=none turns it off again.
+  function maskSide() {
+    var m = param("mask") || lsGet("mask");
+    if (m !== "camera") return m;
+    var a = screen.orientation ? screen.orientation.angle : window.orientation;
+    if (a === 90) return "left";
+    if (a === 270 || a === -90) return "right";
+    return "none";
+  }
+  function applyMask() {
+    var m = param("mask");
+    if (m) lsSet("mask", m);
+    var cls = document.documentElement.className.replace(/\s*mask-\w+/g, "");
+    var side = maskSide();
+    document.documentElement.className = cls + (side === "left" || side === "right" ? " mask-" + side : "");
+  }
+
+  // anti burn-in: walk the panel through a 3x3 grid of small offsets
+  var SHIFTS = [[0, 0], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1]];
+  function applyShift() {
+    var every = (state.data && state.data.display && state.data.display.pixelShiftMinutes) || 3;
+    var s = SHIFTS[Math.floor(Date.now() / (every * 60000)) % SHIFTS.length];
+    led.shift(s[0], s[1]);
   }
 
   // ---------- header: clock + weather ----------
@@ -57,7 +111,7 @@
     var d = new Date(nowSec() * 1000);
     var h = d.getHours() % 12 || 12;
     var x = led.text(1, 1, h + ":" + pad(d.getMinutes()), C.white);
-    led.text(x + 5, 1, DAYS[d.getDay()] + " " + MONTHS[d.getMonth()] + " " + d.getDate(), C.dim);
+    x = led.text(x + 5, 1, DAYS[d.getDay()] + " " + MONTHS[d.getMonth()] + " " + d.getDate(), C.dim);
 
     var right = led.cols - 1;
     var stale = !state.fetchedAt || Date.now() - state.fetchedAt > 3 * 60 * 1000;
@@ -67,13 +121,38 @@
     }
     var w = state.data && state.data.weather;
     if (!w) return;
-    if (w.rain3h != null) {
-      right = led.textRight(right, 1, w.rain3h + "%", C.cyan) - 1;
-      right = led.textRight(right, 1, "☂", C.cyan) - 5;
+    // parts left-to-right; optional ones are dropped (least important first) until it fits
+    var rain = w.rain3h != null;
+    var parts = [
+      { icon: ICONS[w.icon], gap: 0 },
+      { s: w.temp + "°", c: C.amber, gap: 4 },
+      { s: w.text || "", c: C.dim, gap: 5, drop: 1 },
+      { s: w.hi + "/" + w.lo, c: C.dim, gap: 5, drop: 2 },
+      { s: w.humidity != null ? "♦" : "", c: C.dim, gap: 5, drop: 3 },
+      { s: w.humidity != null ? w.humidity + "%" : "", c: C.dim, gap: 1, drop: 3 },
+      { s: rain ? "☂" : "", c: C.cyan, gap: 5 },
+      { s: rain ? w.rain3h + "%" : "", c: C.cyan, gap: 1 },
+    ];
+    // gap = blank columns to the left of a part
+    function pw(p) {
+      return p.icon ? p.icon[0].length : p.s ? FONT.measure(p.s) : -1;
     }
-    right = led.textRight(right, 1, w.hi + "/" + w.lo, C.dim) - 5;
-    if (w.text) right = led.textRight(right, 1, w.text, C.dim) - 5;
-    led.textRight(right, 1, w.temp + "°", C.amber);
+    function width() {
+      var t = 0;
+      for (var i = 0; i < parts.length; i++) if (pw(parts[i]) >= 0) t += pw(parts[i]) + parts[i].gap;
+      return t;
+    }
+    var room = right - x - 6;
+    for (var level = 1; level <= 3 && width() > room; level++)
+      for (var i = 0; i < parts.length; i++) if (parts[i].drop === level) parts[i].s = "";
+    if (width() > room) return;
+    for (var k = parts.length - 1; k >= 0; k--) {
+      var q = parts[k], wq = pw(q);
+      if (wq < 0) continue;
+      if (q.icon) led.sprite(right - wq, 0, q.icon, ICON_PAL);
+      else led.text(right - wq, 1, q.s, q.c);
+      right -= wq + q.gap;
+    }
   }
 
   // ---------- subway ----------
@@ -88,28 +167,45 @@
     return (group.targets[route] || "") + " " + (a.travelLive ? "" : "~") + a.travelMin + "m";
   }
 
-  // style "list": one row per route -> (2) Franklin  4,12,20      42St 29m
+  // style "list": one row per config row; routes sharing a row are merged ->
+  // (2)(3) Franklin  4,7,12      42St 31m
   function drawList(groups) {
     var n = (state.data.display && state.data.display.arrivalsPerRoute) || 3;
-    var labelW = 0, i, j;
-    for (i = 0; i < groups.length; i++) labelW = Math.max(labelW, FONT.measure(groups[i].label));
-    var xLabel = 15, xMins = xLabel + labelW + 6;
-    var travelW = FONT.measure("42St ~29m");
-    var row = 0;
-    for (i = 0; i < groups.length && row < SUB_ROWS; i++) {
+    var rows = [], labelW = 0, bullets = 1, i, j, k;
+    for (i = 0; i < groups.length; i++) {
       var g = groups[i];
-      for (j = 0; j < g.routes.length && row < SUB_ROWS; j++, row++) {
-        var r = g.routes[j];
-        var y = SUB_Y + row * SUB_H;
-        var list = upcoming(g.arrivals[r] || []);
-        led.bullet(1, y, r, ROUTE_COLOR[r] || C.white, BLACK_TEXT[r] ? "#111111" : "#FFFFFF");
-        led.text(xLabel, y + 2, g.label, C.green);
-        var ms = [];
-        for (var k = 0; k < list.length && ms.length < n; k++) ms.push(mins(list[k].t));
-        var maxX = led.cols - travelW - 4;
-        led.text(xMins, y + 2, ms.length ? ms.join(",") : "--", ms.length ? C.white : C.dim, maxX);
-        led.textRight(led.cols - 1, y + 2, travelText(g, r, list[0]), C.amber);
+      var defs = g.rows || g.routes.map(function (r) { return [r]; });
+      labelW = Math.max(labelW, FONT.measure(g.label));
+      for (j = 0; j < defs.length; j++) {
+        var list = [];
+        for (k = 0; k < defs[j].length; k++) {
+          var arr = upcoming(g.arrivals[defs[j][k]] || []);
+          for (var m = 0; m < arr.length; m++) list.push({ a: arr[m], r: defs[j][k] });
+        }
+        list.sort(function (a, b) { return a.a.t - b.a.t; });
+        rows.push({ g: g, routes: defs[j], list: list });
+        bullets = Math.max(bullets, defs[j].length);
       }
+    }
+    // spread the rows over the subway area
+    var count = Math.min(rows.length, SUB_ROWS);
+    var h = Math.min(Math.floor((SUB_ROWS * SUB_H) / Math.max(count, 1)), 16);
+    var y0 = SUB_Y + Math.floor((SUB_ROWS * SUB_H - count * h) / 2);
+    var xLabel = 1 + bullets * 12 + 2, xMins = xLabel + labelW + 6;
+    var travelW = FONT.measure("42St ~29m");
+    for (i = 0; i < count; i++) {
+      var row = rows[i], y = y0 + i * h + Math.floor((h - 11) / 2);
+      for (k = 0; k < row.routes.length; k++) {
+        var r = row.routes[k];
+        led.bullet(1 + k * 12, y, r, ROUTE_COLOR[r] || C.white, BLACK_TEXT[r] ? "#111111" : "#FFFFFF");
+      }
+      led.text(xLabel, y + 2, row.g.label, C.green);
+      var ms = [];
+      for (k = 0; k < row.list.length && ms.length < n; k++) ms.push(mins(row.list[k].a.t));
+      var maxX = led.cols - travelW - 4;
+      led.text(xMins, y + 2, ms.length ? ms.join(",") : "--", ms.length ? C.white : C.dim, maxX);
+      var first = row.list[0];
+      if (first) led.textRight(led.cols - 1, y + 2, travelText(row.g, first.r, first.a), C.amber);
     }
   }
 
@@ -164,18 +260,16 @@
           led.text(x, d.y, s.label + " --", C.dim, end);
           continue;
         }
-        var right = end;
+        // num_bikes_available already includes e-bikes
         var count = d.kind === "bikes" ? s.bikes : s.docks;
-        if (d.kind === "bikes" && s.ebikes) {
-          right = led.textRight(right, d.y, "e" + s.ebikes, C.yellow) - 4;
-        }
-        right = led.textRight(right, d.y, count == null ? "-" : "" + count, countColor(count)) - 4;
+        var right = led.textRight(end, d.y, count == null ? "-" : "" + count, countColor(count)) - 4;
         led.text(x, d.y, s.label, C.dim, right);
       }
     }
   }
 
   function draw() {
+    applyShift();
     led.clear();
     drawHeader();
     var d = state.data;
@@ -207,12 +301,18 @@
   }
 
   function init() {
+    applyMask();
     var canvas = document.getElementById("board");
-    led = new LedMatrix(canvas, ROWS, { showUnlitDots: true, glow: true });
-    window.addEventListener("resize", function () {
+    led = new LedMatrix(canvas, ROWS, { showUnlitDots: true, glow: true, minCols: MIN_COLS });
+    var relayout = function () {
+      applyMask();
       led.resize();
       draw();
-    });
+    };
+    window.addEventListener("resize", relayout);
+    if (screen.orientation && screen.orientation.addEventListener)
+      screen.orientation.addEventListener("change", relayout);
+    else window.addEventListener("orientationchange", relayout);
     canvas.addEventListener("click", function () {
       state.style = currentStyle() === "list" ? "next" : "list";
       lsSet("style", state.style);

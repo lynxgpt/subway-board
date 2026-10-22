@@ -4,8 +4,8 @@
 set -e
 DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
-pkg update -y
-pkg install -y nodejs
+yes | pkg upgrade -y -o Dpkg::Options::=--force-confnew
+pkg install -y nodejs-lts
 
 cd "$DIR"
 npm install --omit=dev
@@ -21,3 +21,4 @@ chmod +x ~/.termux/boot/subway-board.sh
 
 echo
 echo "Done. Start now with:  bash $DIR/scripts/start.sh"
+echo "After a reboot the server starts by itself; tap the Subway Board icon to open the board."

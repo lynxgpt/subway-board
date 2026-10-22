@@ -13,11 +13,15 @@ for apk in "$@"; do
   adb install -r "$apk"
 done
 
-# screen on while charging (AC|USB|wireless), landscape lock, long screen timeout
+# screen on while charging (AC|USB|wireless), long screen timeout. Auto-rotate stays on: the app
+# is landscape-only and ?mask=camera keeps the black strip on the front-camera side either way.
 adb shell settings put global stay_on_while_plugged_in 7
-adb shell settings put system accelerometer_rotation 0
-adb shell settings put system user_rotation 1
+adb shell settings put system accelerometer_rotation 1
 adb shell settings put system screen_off_timeout 2147483647
+
+# Termux: shared storage, to copy the project in
+adb shell pm grant com.termux android.permission.READ_EXTERNAL_STORAGE 2>/dev/null || true
+adb shell pm grant com.termux android.permission.WRITE_EXTERNAL_STORAGE 2>/dev/null || true
 
 # exempt from battery optimisation (ignored if a package isn't installed)
 for pkg in com.termux com.termux.boot de.ozerov.fully com.android.chrome; do
@@ -41,7 +45,6 @@ Next, in Termux on the phone:
   bash ~/subway-board/scripts/termux-setup.sh
   bash ~/subway-board/scripts/start.sh
 
-Then open http://localhost:8080 in Fully Kiosk (or Chrome -> Add to Home screen).
-From the PC you can open it on the phone with:
-  adb shell am start -a android.intent.action.VIEW -d http://localhost:8080
+Then open the board once with the strip setting, and install it (Chrome menu -> Install app):
+  adb shell am start -a android.intent.action.VIEW -d "'http://localhost:8080/?mask=camera'" com.android.chrome
 EOF

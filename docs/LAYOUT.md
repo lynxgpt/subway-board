@@ -1,28 +1,32 @@
 # Layout (phone, landscape)
 
 The page draws a simulated LED dot matrix. The panel is 102 dots tall, and its width follows
-the screen's aspect ratio (≈220 dots on a 19.5:9 phone). The font is 5×7 dots. Each dot is a
+the screen's aspect ratio (≈205 dots on the S21 with the 10 % camera-side strip). The font is 5×7 dots. Each dot is a
 lit or unlit LED circle with a slight glow.
 
 ```
-y=0   ┌──────────────────────────────────────────────────────────────────────┐
-      │ 12:17 Wed Oct 21                    58° Cloudy 63/51  ☂20%          │  header (9)
-y=11  │ (2) Franklin  1,10,19                                   42St 28m     │
-      │ (3) Franklin  2,13,24                                   42St 28m     │
-      │ (4) Franklin  3,10,17                                    GCT 23m     │  subway: 6 rows × 12
-      │ (5) Franklin  4,14,24                                    GCT 23m     │
-      │ (B) 7 Av      2,14,26                                   42St 23m     │
-      │ (Q) 7 Av      2,10,18                                   42St 26m     │
-y=84  │ Bikes  <station 1>        7 e2   <station 2>             0          │  citi bike (9)
-      │ Docks  <station 3>          12   <station 4>             1          │  citi bike (9)
-      └──────────────────────────────────────────────────────────────────────┘
+      ┌───────────────────────────────────────────────────────────────────┐
+      │ 3:22 Thu Oct 22          ☀ 20°  20/7  ♦26%  ☂0%                   │  header (9)
+      │                                                                   │
+      │ (2)(3) Franklin  2,5,5                                 42St 31m   │
+      │ (4)(5) Franklin  1,2,5                                  GCT 27m   │  subway: config rows,
+      │ (B)    7 Av      3,17,22                               42St 24m   │  spread over 72 dots
+      │ (Q)    7 Av      0,3,7                                 42St 23m   │
+y=84  │ Bikes  Bike 1               3   Bike 2                   0        │  citi bike (9)
+      │ Docks  Dock 1               7   Dock 2                  17        │  citi bike (9)
+      └───────────────────────────────────────────────────────────────────┘
 ```
+
+Routes listed together in `config.json` → `subway[].rows` share a row: both bullets are shown
+and their departures are merged in time order. The header drops the condition word, then hi/lo,
+then humidity when the screen is too narrow. Panels narrower than 196 dots (e.g. a 4:3 iPad)
+are letterboxed instead of squeezed.
 
 ## Two subway styles (tap the screen to switch)
 
 | Style | Row | Based on |
 |---|---|---|
-| `list` (default) | bullet · station (green) · next 3 departures in minutes (white) · travel time to 42 St (amber) | "Downtown 7,18,30" clock |
+| `list` (default) | bullet(s) · station (green) · next 3 departures in minutes (white) · travel time to 42 St (amber) | "Downtown 7,18,30" clock |
 | `next` | bullet · destination (blue) · `N min` (white) · travel time to 42 St (amber) | "8 Av / Forest Hills 11 min" clock |
 
 You can also choose the style with a URL parameter: `?style=list` or `?style=next`.
@@ -36,9 +40,11 @@ You can also choose the style with a URL parameter: `?style=list` or `?style=nex
 | Destination (next) | blue `#3A4DFF` |
 | Minutes | white `#F2ECFF` |
 | Travel time to 42 St | amber `#FFB000` |
-| Temperature | amber |
-| Rain chance | cyan |
-| Bike / dock counts | white, amber when ≤ 2, red when 0, e-bikes yellow `eN` |
+| Weather icon | sun/moon/partly/cloud/rain/snow/fog/storm, 11×9 multicolour sprite |
+| Temperature (°C) | amber |
+| Hi/lo, humidity (♦) | grey |
+| Rain chance next 3 h (☂) | cyan |
+| Bike / dock counts | white, amber when ≤ 2, red when 0 (bike count includes e-bikes) |
 | Data error or stale data (>3 min) | red `!` at top right |
 
 ## Travel time to 42 St
