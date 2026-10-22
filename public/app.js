@@ -48,11 +48,13 @@
   var ROWS = 102;
   // narrowest panel the layout fits in; narrower screens (4:3 iPad) get a letterboxed panel
   var MIN_COLS = 196;
-  var SUB_Y = 11, SUB_ROWS = 6, SUB_H = 12, BIKE_Y = 84, INFO_H = 9;
+  // header 0-8 | subway rows (4 x 16, content 17-75) | big 3x clock 79-99 + citi bike lines
+  var SUB_Y = 11, SUB_ROWS = 6, SUB_H = 12, BIKE_Y = 80, INFO_H = 11;
+  var CLOCK_Y = 79, CLOCK_SCALE = 3;
   var DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-  var state = { data: null, offset: 0, fetchedAt: 0, style: null, wakeUntil: 0 };
+  var state = { data: null, offset: 0, fetchedAt: 0, wakeUntil: 0 };
   var led;
 
   function pad(n) {
@@ -74,10 +76,6 @@
   function param(name) {
     var m = new RegExp("[?&]" + name + "=(\\w+)").exec(location.search);
     return m && m[1];
-  }
-
-  function currentStyle() {
-    return param("style") || state.style || lsGet("style") || (state.data && state.data.display.style) || "list";
   }
 
   // ?mask=right|left blacks out 6% of this device's screen on that side; ?mask=camera puts it on
@@ -128,10 +126,7 @@
   // ---------- header: clock + weather ----------
   function drawHeader() {
     var d = new Date(nowSec() * 1000);
-    // colon blinks once a second (a space is the same width, so nothing moves)
-    var colon = d.getSeconds() % 2 ? " " : ":";
-    var x = led.text(1, 1, pad(d.getHours()) + colon + pad(d.getMinutes()), C.white);
-    x = led.text(x + 5, 1, DAYS[d.getDay()] + " " + MONTHS[d.getMonth()] + " " + d.getDate(), C.dim);
+    var x = led.text(1, 1, DAYS[d.getDay()] + " " + MONTHS[d.getMonth()] + " " + d.getDate(), C.dim);
 
     var right = led.cols - 1;
     var stale = !state.fetchedAt || Date.now() - state.fetchedAt > 3 * 60 * 1000;
@@ -187,7 +182,7 @@
     return (group.targets[route] || "") + " " + (a.travelLive ? "" : "~") + a.travelMin + "m";
   }
 
-  // style "list": one row per config row; routes sharing a row are merged ->
+  // one row per config row; routes sharing a row are merged ->
   // (2)(3) Franklin  4,7,12      42St 31m
   function drawList(groups) {
     var n = (state.data.display && state.data.display.arrivalsPerRoute) || 3;
@@ -243,31 +238,6 @@
     }
   }
 
-  // style "next": one row per train, soonest first -> (Q) 96 St      11 min  42St 27m
-  function drawNext(groups) {
-    var max = Math.min(SUB_ROWS, (state.data.display && state.data.display.maxRowsNext) || SUB_ROWS);
-    var all = [], i, j;
-    for (i = 0; i < groups.length; i++)
-      for (j = 0; j < groups[i].routes.length; j++) {
-        var r = groups[i].routes[j];
-        var list = upcoming(groups[i].arrivals[r] || []);
-        for (var k = 0; k < list.length; k++) all.push({ g: groups[i], r: r, a: list[k] });
-      }
-    all.sort(function (a, b) { return a.a.t - b.a.t; });
-    var travelW = FONT.measure("42St ~29m");
-    var minW = FONT.measure("88 min");
-    for (i = 0; i < all.length && i < max; i++) {
-      var it = all[i], y = SUB_Y + i * SUB_H;
-      var right = led.cols - 1;
-      led.textRight(right, y + 2, travelText(it.g, it.r, it.a), C.amber);
-      right -= travelW + 6;
-      led.textRight(right, y + 2, mins(it.a.t) + " min", C.white);
-      right -= minW + 4;
-      led.bullet(1, y, it.r, ROUTE_COLOR[it.r] || C.white, BLACK_TEXT[it.r] ? "#111111" : "#FFFFFF");
-      led.text(15, y + 2, it.a.destName || it.g.label, C.blue, right);
-    }
-  }
-
   // ---------- citi bike ----------
   function countColor(n) {
     if (n == null) return C.dim;
@@ -276,31 +246,41 @@
     return C.white;
   }
 
+  // big 24 h clock, bottom left; the colon blinks once a second
+  function drawClock() {
+    var d = new Date(nowSec() * 1000);
+    var colon = d.getSeconds() % 2 ? " " : ":";
+    return led.textScaled(1, CLOCK_Y, pad(d.getHours()) + colon + pad(d.getMinutes()), C.white, CLOCK_SCALE);
+  }
+
+  // two compact lines in shared columns, block right-aligned:
+  //   Bike 1   nn Bike 2   nn
+  //   Dock 1   nn Dock 2   nn
+  // (counts right-aligned in a two-digit field; num_bikes_available already includes e-bikes)
   function drawBikes(cb) {
-    var x0 = FONT.measure("Docks") + 5;
-    var cellW = Math.floor((led.cols - x0) / 2);
-    var rowsDef = [
-      { y: BIKE_Y + 1, title: "Bikes", color: C.green, items: cb.bikes, kind: "bikes" },
-      { y: BIKE_Y + 1 + INFO_H, title: "Docks", color: C.cyan, items: cb.docks, kind: "docks" },
+    var lines = [
+      { items: cb.bikes || [], kind: "bikes" },
+      { items: cb.docks || [], kind: "docks" },
     ];
-    for (var i = 0; i < rowsDef.length; i++) {
-      var d = rowsDef[i];
-      led.text(1, d.y, d.title, d.color);
-      for (var j = 0; j < 2; j++) {
-        var s = d.items[j];
-        if (!s) continue;
-        var x = x0 + j * cellW, end = x + cellW - 6;
-        if (s.missing) {
-          led.text(x, d.y, s.label + " --", C.dim, end);
-          continue;
-        }
-        // num_bikes_available already includes e-bikes
-        var count = d.kind === "bikes" ? s.bikes : s.docks;
-        var right = led.textRight(end, d.y, count == null ? "-" : "" + count, countColor(count)) - 4;
-        led.text(x, d.y, s.label, C.dim, right);
+    var gap = FONT.measure("   "), numW = FONT.measure("88"), sep = FONT.measure(" ") + 1;
+    var labelW = 0, cols = 0, i, j;
+    for (i = 0; i < lines.length; i++) {
+      cols = Math.max(cols, lines[i].items.length);
+      for (j = 0; j < lines[i].items.length; j++) labelW = Math.max(labelW, FONT.measure(lines[i].items[j].label));
+    }
+    var entryW = labelW + 1 + gap + 1 + numW;
+    var x0 = led.cols - 1 - (cols * entryW + (cols - 1) * sep);
+    for (i = 0; i < lines.length; i++) {
+      var ln = lines[i], y = BIKE_Y + 1 + i * INFO_H;
+      for (j = 0; j < ln.items.length; j++) {
+        var s = ln.items[j], x = x0 + j * (entryW + sep);
+        led.text(x, y, s.label, C.dim);
+        var count = s.missing ? null : ln.kind === "bikes" ? s.bikes : s.docks;
+        led.textRight(x + entryW, y, count == null ? "--" : "" + count, countColor(count));
       }
     }
   }
+
 
   // night (display.night, e.g. 01:00-08:00): the screen goes fully black; a tap shows the
   // board for WAKE_MS
@@ -326,9 +306,9 @@
     led.clear();
     drawHeader();
     var d = state.data;
+    drawClock();
     if (d) {
-      if (currentStyle() === "next") drawNext(d.subway || []);
-      else drawList(d.subway || []);
+      drawList(d.subway || []);
       if (d.citibike) drawBikes(d.citibike);
     } else {
       led.text(15, SUB_Y + 2, "Loading...", C.dim);
@@ -372,15 +352,10 @@
     if (screen.orientation && screen.orientation.addEventListener)
       screen.orientation.addEventListener("change", relayout);
     else window.addEventListener("orientationchange", relayout);
-    // on the document, not the canvas: at night the canvas is hidden and gets no clicks
+    // at night a tap shows the board for a while (on the document: the hidden canvas gets no clicks)
     document.addEventListener("click", function () {
-      if (isNight()) {
-        state.wakeUntil = Date.now() + WAKE_MS;
-        draw();
-        return;
-      }
-      state.style = currentStyle() === "list" ? "next" : "list";
-      lsSet("style", state.style);
+      if (!isNight()) return;
+      state.wakeUntil = Date.now() + WAKE_MS;
       draw();
     });
     if (navigator.wakeLock) {

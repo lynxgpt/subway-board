@@ -6,14 +6,14 @@ lit or unlit LED circle with a slight glow.
 
 ```
       ┌───────────────────────────────────────────────────────────────────┐
-      │ 15:28 Thu Oct 22         ☀ 20°  20/7  ♦26%  ☂0%                   │  header (9), 24 h clock, colon blinks
+      │ Thu Oct 22               ☀ 19°  Clear 20/7  ♦29%  ☂0%             │  header (9)
       │                                                                   │
-      │ (2)(3) Franklin  5,11,12,17,19,25                       TSQ 31m   │
-      │ (4)(5) Franklin  0,2,10,10,14,16                        GCT 27m   │  subway: config rows,
-      │ (B)    7 Av      15,17,24,35                           42St 24m   │  spread over 72 dots
-      │ (Q)    7 Av      3,10,12,22                             TSQ 23m   │
-y=84  │ Bikes  Bike 1               3   Bike 2                   0        │  citi bike (9)
-      │ Docks  Dock 1               7   Dock 2                  17        │  citi bike (9)
+      │ (2)(3) Franklin  0,4,8,8,14,17                          TSQ 31m   │
+      │ (4)(5) Franklin  1,4,8,13,15,18                         GCT 27m   │  subway: 4 rows x 16
+      │ (B)    7 Av      0,8,8,20                              42St 5m    │
+      │ (Q)    7 Av      0,3,12,22                              TSQ 23m   │
+y=79  │ ███ ███ ███ ███   Bike 1    5  Bike 2    4                        │  24 h clock at 3x (21),
+      │ ███ ███ ███ ███   Dock 1    9  Dock 2   16                        │  colon blinks
       └───────────────────────────────────────────────────────────────────┘
 ```
 
@@ -22,14 +22,10 @@ and their departures are merged in time order. The header drops the condition wo
 then humidity when the screen is too narrow. Panels narrower than 196 dots (e.g. a 4:3 iPad)
 are letterboxed instead of squeezed.
 
-## Two subway styles (tap the screen to switch)
+## Rows
 
-| Style | Row | Based on |
-|---|---|---|
-| `list` (default) | bullet(s) · station (green) · next 3 departures in minutes (white) · travel time to 42 St (amber) | "Downtown 7,18,30" clock |
-| `next` | bullet · destination (blue) · `N min` (white) · travel time to 42 St (amber) | "8 Av / Forest Hills 11 min" clock |
-
-You can also choose the style with a URL parameter: `?style=list` or `?style=next`.
+One row per `config.json` → `subway[].rows` entry: bullet(s) · station (green) · departures in
+minutes (white, dimmed when too soon to catch) · travel time to 42 St (amber).
 
 ## Colours
 
@@ -37,7 +33,6 @@ You can also choose the style with a URL parameter: `?style=list` or `?style=nex
 |---|---|
 | Route bullets | Official MTA colours, with a white letter (black on N/Q/R/W) |
 | Station label (list) | green `#22D35A` |
-| Destination (next) | blue `#3A4DFF` |
 | Minutes | white `#F2ECFF`; half brightness when under `show.dimUnderMin` |
 | Travel time to 42 St | amber `#FFB000` |
 | Weather icon | sun/moon/partly/cloud/rain/snow/fog/storm, 11×9 multicolour sprite |

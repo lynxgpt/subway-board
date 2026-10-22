@@ -5,8 +5,7 @@ A Node server runs in **Termux** on the phone, and Chrome (installed as a home-s
 `http://localhost:8080`. Any other device on the same Wi-Fi (iPad, laptop) can open
 `http://<phone-ip>:8080` in a browser.
 
-![list style](docs/screenshots/style-list.png)
-![next style](docs/screenshots/style-next.png)
+![board](docs/screenshots/board.png)
 
 Live data, taken on the phone (the black strip on the left is the `?mask=camera` setting).
 See [docs/LAYOUT.md](docs/LAYOUT.md) for the layout.
@@ -47,7 +46,7 @@ npm run fetch-stops  # destination names
 npm start            # live data
 ```
 
-Open http://localhost:8080. Tap the screen to switch between the `list` and `next` styles.
+Open http://localhost:8080.
 
 ## Changing Citi Bike stations
 
@@ -89,7 +88,6 @@ Once Termux:Boot is set up, the server starts automatically after a reboot
 | `?mask=left` / `?mask=right` | strip on a fixed side |
 | `?mask=none` | no strip (default) |
 | `?cat=top` / `?cat=bottom` / `?cat=off` | Siamese cat walking along the strip (feet on the screen edge) from this end to 80 % of the way, staying out of the 20 % by the S21's broken corner; default picks the end away from it. With `?mask=camera` it is a liquid and flows around the punch-hole camera |
-| `?style=list` / `?style=next` | subway style (tapping the board also switches) |
 
 With a strip on, the opposite edge keeps a thin 2.5 % black margin so the S21's rounded corners
 (90 px radius) don't clip the board's corner dots.

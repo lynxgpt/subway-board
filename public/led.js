@@ -91,6 +91,20 @@ LedMatrix.prototype.text = function (x, y, str, color, maxX) {
   return x - 1;
 };
 
+// Like text(), but every font dot becomes a scale x scale block of dots. Returns the end x.
+LedMatrix.prototype.textScaled = function (x, y, str, color, scale) {
+  str = String(str);
+  for (var i = 0; i < str.length; i++) {
+    var gl = FONT.glyph(str.charAt(i));
+    for (var k = 0; k < gl.px.length; k++)
+      for (var dy = 0; dy < scale; dy++)
+        for (var dx = 0; dx < scale; dx++)
+          this.set(x + gl.px[k][0] * scale + dx, y + gl.px[k][1] * scale + dy, color);
+    x += (gl.w + 1) * scale;
+  }
+  return x - scale;
+};
+
 LedMatrix.prototype.textRight = function (rightX, y, str, color) {
   var w = FONT.measure(String(str));
   this.text(rightX - w, y, str, color);
