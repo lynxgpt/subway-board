@@ -10,7 +10,7 @@ lit or unlit LED circle with a slight glow.
       │                                                                   │
       │ (2)(3) Franklin  0,4,8,8,14,17                          TSQ 31m   │
       │ (4)(5) Franklin  1,4,8,13,15,18                         GCT 27m   │  subway: 4 rows x 16
-      │ (B)    7 Av      0,8,8,20                              42St 5m    │
+      │ (B)    7 Av      0,8,8,20                              42nd  5m   │
       │ (Q)    7 Av      0,3,12,22                              TSQ 23m   │
 y=79  │ ███ ███ ███ ███   Bike 1    5  Bike 2    4                        │  24 h clock at 3x (21),
       │ ███ ███ ███ ███   Dock 1    9  Dock 2   16                        │  colon blinks
@@ -52,5 +52,7 @@ minutes (white, dimmed when too soon to catch) · travel time to 42 St (amber).
 | Q | 7 Av `D25N` | Times Sq–42 St `R16N` |
 
 The live value is the train's predicted arrival at the 42 St stop minus its arrival at your
-stop, both taken from the same realtime trip. If the trip doesn't list the 42 St stop, the
-board shows `~` plus `fallbackMin` from `config.json`.
+stop, both taken from the same realtime trip. If the trip doesn't list the 42 St stop, or the
+prediction is outside 60-180 % of `fallbackMin` (the MTA feed sometimes has every stop to
+42 St within two minutes), the board shows `fallbackMin` from `config.json` in dimmer amber.
+Labels (TSQ / GCT / 42nd) are left-aligned in one column, minutes right-aligned at the edge.

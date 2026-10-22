@@ -35,7 +35,7 @@
       "routes": ["B", "Q"],
       "show": { "minTrains": 4, "withinMin": 25, "dimUnderMin": 10 },
       "target": {
-        "B": { "stopId": "D16N", "label": "42St", "fallbackMin": 24 },
+        "B": { "stopId": "D16N", "label": "42nd", "fallbackMin": 24 },
         "Q": { "stopId": "R16N", "label": "TSQ", "fallbackMin": 27 }
       }
     }

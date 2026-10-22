@@ -21,6 +21,7 @@
     yellow: "#FFE14D",
     red: "#FF3030",
     half: "#79768A", // white at ~50 %
+    amberDim: "#9A6A00", // amber at ~60 %
   };
 
   // 11x9 weather icons; y = sun, w = cloud, g = dark cloud, b = rain, s = snow, m = moon
@@ -177,13 +178,25 @@
     return out;
   }
 
-  function travelText(group, route, a) {
-    if (!a || a.travelMin == null) return "";
-    return (group.targets[route] || "") + " " + (a.travelLive ? "" : "~") + a.travelMin + "m";
+  // travel time to 42 St as two columns: stop label left-aligned (TSQ / GCT / 42nd),
+  // minutes right-aligned at the edge; dimmer amber = usual time, not a live prediction
+  // minutes field fits "88m"
+  var TRAVEL_MIN_W = FONT.measure("88m"), TRAVEL_GAP = 4;
+  function travelLabelW(groups) {
+    var w = 0;
+    for (var i = 0; i < groups.length; i++)
+      for (var r in groups[i].targets) w = Math.max(w, FONT.measure(groups[i].targets[r] || ""));
+    return w;
+  }
+  function drawTravel(group, route, a, y, labelW) {
+    if (!a || a.travelMin == null) return;
+    var right = led.cols - 1;
+    led.textRight(right, y, a.travelMin + "m", a.travelLive ? C.amber : C.amberDim);
+    led.text(right - TRAVEL_MIN_W - TRAVEL_GAP - labelW, y, group.targets[route] || "", C.amber);
   }
 
   // one row per config row; routes sharing a row are merged ->
-  // (2)(3) Franklin  4,7,12      42St 31m
+  // (2)(3) Franklin  4,7,12      TSQ 31m
   function drawList(groups) {
     var n = (state.data.display && state.data.display.arrivalsPerRoute) || 3;
     var rows = [], labelW = 0, bullets = 1, i, j, k;
@@ -207,7 +220,7 @@
     var h = Math.min(Math.floor((SUB_ROWS * SUB_H) / Math.max(count, 1)), 16);
     var y0 = SUB_Y + Math.floor((SUB_ROWS * SUB_H - count * h) / 2);
     var xLabel = 1 + bullets * 12 + 2, xMins = xLabel + labelW + 6;
-    var travelW = FONT.measure("42St ~29m");
+    var labelW = travelLabelW(groups), travelW = labelW + TRAVEL_GAP + TRAVEL_MIN_W;
     for (i = 0; i < count; i++) {
       var row = rows[i], y = y0 + i * h + Math.floor((h - 11) / 2);
       for (k = 0; k < row.routes.length; k++) {
@@ -234,7 +247,7 @@
         xm = led.text(xm, y + 2, str, ms[k] < dimUnder ? C.half : C.white) + 1;
       }
       var first = row.list[0];
-      if (first) led.textRight(led.cols - 1, y + 2, travelText(row.g, first.r, first.a), C.amber);
+      if (first) drawTravel(row.g, first.r, first.a, y + 2, labelW);
     }
   }
 
@@ -256,30 +269,41 @@
   // two compact lines in shared columns, block right-aligned:
   //   Bike 1   nn Bike 2   nn
   //   Dock 1   nn Dock 2   nn
-  // (counts right-aligned in a two-digit field; num_bikes_available already includes e-bikes)
+  // Labels split at the last space so the words and the station numbers each get their own
+  // column; counts are right-aligned in a two-digit field (bike counts include e-bikes).
   function drawBikes(cb) {
     var lines = [
       { items: cb.bikes || [], kind: "bikes" },
       { items: cb.docks || [], kind: "docks" },
     ];
-    var gap = FONT.measure("   "), numW = FONT.measure("88"), sep = FONT.measure(" ") + 1;
-    var labelW = 0, cols = 0, i, j;
+    var gap = FONT.measure("   "), numW = FONT.measure("88"), sep = FONT.measure(" ") + 1, sp = FONT.measure(" ") + 1;
+    var wordW = 0, idW = 0, cols = 0, i, j;
+    function split(label) {
+      var k = label.lastIndexOf(" ");
+      return k < 0 ? [label, ""] : [label.slice(0, k), label.slice(k + 1)];
+    }
     for (i = 0; i < lines.length; i++) {
       cols = Math.max(cols, lines[i].items.length);
-      for (j = 0; j < lines[i].items.length; j++) labelW = Math.max(labelW, FONT.measure(lines[i].items[j].label));
+      for (j = 0; j < lines[i].items.length; j++) {
+        var parts = split(lines[i].items[j].label);
+        wordW = Math.max(wordW, FONT.measure(parts[0]));
+        idW = Math.max(idW, FONT.measure(parts[1]));
+      }
     }
-    var entryW = labelW + 1 + gap + 1 + numW;
+    var entryW = wordW + sp + idW + 1 + gap + 1 + numW;
     var x0 = led.cols - 1 - (cols * entryW + (cols - 1) * sep);
     for (i = 0; i < lines.length; i++) {
       var ln = lines[i], y = BIKE_Y + 1 + i * INFO_H;
       for (j = 0; j < ln.items.length; j++) {
-        var s = ln.items[j], x = x0 + j * (entryW + sep);
-        led.text(x, y, s.label, C.dim);
+        var s = ln.items[j], x = x0 + j * (entryW + sep), lp = split(s.label);
+        led.text(x, y, lp[0], C.dim);
+        led.textRight(x + wordW + sp + idW, y, lp[1], C.dim);
         var count = s.missing ? null : ln.kind === "bikes" ? s.bikes : s.docks;
         led.textRight(x + entryW, y, count == null ? "--" : "" + count, countColor(count));
       }
     }
   }
+
 
 
   // night (display.night, e.g. 01:00-08:00): the screen goes fully black; a tap shows the

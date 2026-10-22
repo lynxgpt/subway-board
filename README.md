@@ -25,7 +25,7 @@ Configured stations, Manhattan-bound only (`config.json` → `subway[].show`):
 |---|---|---|---|
 | 2/3 Franklin Av `239N` | all in next 15 min, at least 6 | under 5 min | TSQ (Times Sq) |
 | 4/5 Franklin Av | all in next 15 min, at least 6 | under 5 min | GCT |
-| B 7 Av `D25N` | all in next 25 min, at least 4 | under 10 min | 42St (Bryant Pk) |
+| B 7 Av `D25N` | all in next 25 min, at least 4 | under 10 min | 42nd (42 St-Bryant Pk) |
 | Q 7 Av | all in next 25 min, at least 4 | under 10 min | TSQ |
 
 Citi Bike (`config.json` → `citibike`):
