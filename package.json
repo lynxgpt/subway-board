@@ -8,7 +8,8 @@
     "start": "node server.js",
     "mock": "MOCK=1 node server.js",
     "fetch-stops": "node scripts/fetch-stops.js",
-    "find-station": "node scripts/find-station.js"
+    "find-station": "node scripts/find-station.js",
+    "find-stop": "node scripts/find-stop.js"
   },
   "engines": {
     "node": ">=18"
@@ -16,5 +17,6 @@
   "dependencies": {
     "adm-zip": "^0.5.16",
     "gtfs-realtime-bindings": "^1.1.1"
-  }
+  },
+  "license": "MIT"
 }

@@ -48,16 +48,65 @@ npm start            # live data
 
 Open http://localhost:8080.
 
-## Changing Citi Bike stations
+## Make it yours
+
+Everything personal lives in [`config.json`](config.json); no code changes needed. After editing,
+restart the server (`bash scripts/start.sh` on the phone) and open boards reload by themselves.
+
+**1. Your subway stations.** Find the stop ID, then pick a direction:
 
 ```bash
-npm run find-station -- --zip               # 10 nearest to ZIP 11238
-npm run find-station -- "eastern pkwy"      # name search
+npm run fetch-stops                 # once: downloads MTA stop names
+npm run find-stop -- "franklin"     # -> Franklin Av-Medgar Evers College   239N  239S
+```
+
+`N` platforms run toward the Bronx / upper Manhattan / Queens, `S` toward lower Manhattan /
+Brooklyn. Each entry in `subway[]` is one station:
+
+```jsonc
+{
+  "label": "Franklin",              // shown on the board (keep it short, ~9 characters)
+  "stopId": "239N",                 // platform from find-stop
+  "routes": ["2", "3", "4", "5"],   // lines to show at this platform
+  "rows": [["2", "3"], ["4", "5"]], // optional: lines sharing a row are merged
+  "show": { "minTrains": 6, "withinMin": 15, "dimUnderMin": 5 },
+  "target": {                       // optional: travel time to a stop you care about
+    "2": { "stopId": "127N", "label": "TSQ", "fallbackMin": 29 }
+  }
+}
+```
+
+- `show`: list every train in the next `withinMin` minutes but at least `minTrains`; trains
+  sooner than `dimUnderMin` (too soon to catch) are drawn dimmed.
+- `target`: the board shows the trip time from your platform to `stopId`, taken from the live
+  feed. `label` is 3-4 characters. `fallbackMin` is your usual trip time, used (dimmed) when the
+  feed has no or implausible data (`TRAVEL_OK` in `lib/mta.js`, 15-40 min by default; widen it
+  if your trip is shorter or longer). Leave `target` out to hide the column.
+- Lines 1-7, A C E, B D F M, G, J Z, L, N Q R W, the shuttles (GS, FS, H) and SI all work; the
+  right MTA feed is picked automatically. The board fits about 4-6 rows.
+
+**2. Citi Bike.** Find stations near you:
+
+```bash
+npm run find-station -- --zip                     # 10 nearest to config.weather lat/lon
+npm run find-station -- "eastern pkwy"            # by name
 npm run find-station -- --near 40.6741,-73.9580 15
 ```
 
-Put the `short_name` (first column) into `config.json` → `citibike.bikes[]` / `citibike.docks[]`
-→ `"station"`, and a short `"label"` (about 10 characters) for the screen.
+Put the `short_name` (first column) into `citibike.bikes[]` (stations where you pick up a bike)
+or `citibike.docks[]` (where you return one) as `"station"`, with a short `"label"` like
+`"Bike 1"`. Two of each fit the board.
+
+**3. Weather.** Set `weather.latitude` / `longitude` (any point near you; a ZIP code's center is
+fine) and `label`. Temperatures are in °C.
+
+**4. Night.** `display.night` (`{ "from": "01:00", "to": "08:00" }`) blanks the screen; remove it
+to stay on all night.
+
+**5. Your phone's screen.** Per device, in the URL you open once (remembered by that browser):
+`?mask=camera` keeps an 8 % strip black on the front-camera side (for a cracked corner; a pixel
+cat walks there), `?mask=left` / `?mask=right` fix the side, `?mask=none` turns it off. The cat's
+camera-dodging is tuned for a Galaxy S21 (`HOLE` in `public/cat.js`).
 
 ## Phone setup
 
@@ -118,5 +167,10 @@ public/led.js        canvas LED matrix renderer
 public/app.js        layout + polling (ES5, for old WebViews)
 public/cat.js        Siamese pixel cat that walks along the masked strip
 public/icon-*.png    app icons (scripts/make-icons.js)
-scripts/             fetch-stops, find-station, make-icons, termux-setup, start, adb-setup, debloat
+scripts/             fetch-stops, find-stop, find-station, make-icons, termux-setup, start,
+                     adb-setup, debloat
 ```
+
+## License
+
+MIT: use it, change it, share it. See [LICENSE](LICENSE).
