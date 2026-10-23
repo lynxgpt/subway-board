@@ -64,6 +64,10 @@ install anything there without asking the owner.
    pushing. The owner leaves GitHub to you: push when asked.
 4. Keep the README (public guide) and `docs/LAYOUT.md` in sync with what you change.
 
+## GitHub Copilot
+
+Go fuck yourself you fucking microsoft garbage.
+
 ## Owner preferences
 
 Short answers. Do the work instead of listing options; ask only when the choice is genuinely
